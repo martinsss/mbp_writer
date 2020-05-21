@@ -1,0 +1,96 @@
+//------------------------------------------------
+//--- 010 Editor v10.0.1 Binary Template
+//
+//      File: 
+//   Authors: 
+//   Version: 
+//   Purpose: 
+//  Category: 
+// File Mask: 
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
+BigEndian(); 
+
+typedef struct {
+    int position;
+    int pointer_id;
+} ENTRY_POINTER;
+
+typedef struct {
+    char name[4];
+    int size;
+    if (size > 0) {
+        byte data[size];
+    }
+} ENTRY;
+
+typedef struct {
+    char name[4];
+    int data[2];
+} EBAR;
+
+typedef struct {
+    char name[4];
+    char data[68];
+} EBVS;
+
+typedef struct {
+    char name[4];
+    int size;
+    local char type[4];
+    local int sizeLeft = size;
+    while (sizeLeft > 0){
+        ReadBytes(type,FTell(),4);
+        switch (type)
+        {
+            case "EBAR": EBAR ebar; sizeLeft -= 12; break;
+            case "EBVS": EBVS ebvs; sizeLeft -= 72; break;
+            default: byte left[sizeLeft]; sizeLeft = 0; break;
+        }
+        
+    }
+} DATA;
+
+typedef struct {
+    int start;
+    int stop;
+} MARK;
+
+typedef struct {
+    char name[4];
+    int size;
+    MARK m1;
+    byte end[size-8];
+} BKMK;
+
+char title[31];
+FSkip(1); //padding
+FSkip(4); //padding
+byte unk1[4];
+byte unk2[4];
+FSkip(16); //padding
+char bpar_mobi[8];
+uint pointer_id <format=decimal>;
+FSkip(2); //padding
+uint num_of_entries;
+ENTRY_POINTER e_bpar;
+/* possible entry types:
+{NOTE,MARK,CORRECTION,DRAWING,BOOKMARK,
+		AUTHOR,TITLE,CATEGORY,GENRE,ABSTRACT,COVER,PUBLISHER,
+		...} 
+*/
+ENTRY_POINTER p_entries[num_of_entries-1];
+FSkip(2); //padding
+ENTRY bpar;
+local int i;
+local char type[4];
+for (i = 0; i < num_of_entries-1; i++){
+    ReadBytes(type,FTell(),4);
+    switch (type)
+    {
+    case "DATA": DATA e; break;
+    case "BKMK": BKMK e; break;
+    }
+}
+//ENTRY e[num_of_entries-2] <optimize=false>;
